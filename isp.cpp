@@ -41,19 +41,77 @@ private:
     double eta;
 };
 
-class Grid{
+
+class Source{
 public:
-    Grid(size_t size_n, double center, double radius){
-        grid.resize(size_n);
-        
-        vector<Point> grid_temp;
+    Source(double theta_n, double phi_n, double amplitude_n){
+        theta = theta_n;
+        phi = phi_n;
+        amplitude = amplitude_n;
+    }
+    
+    double T(){
+        return theta;
+    }
+    
+    double P(){
+        return phi;
+    }
+    
+    double A(){
+        return amplitude;
+    }
+
+private:
+    double theta;
+    double phi;
+    double amplitude;
+};
+
+
+class Lattice{
+public:
+    Lattice(size_t size_n, double x_0, double y_0, double z_0, double radius){
+        vector<Point>lattice_temp;
+        for (size_t i = 0; i < (size_n + 1); i++){
+            for (size_t j = 0; j < (size_n + 1); j++){
+                for (size_t k = 0; k < (size_n + 1); k++){
+                    lattice_temp.emplace_back(k / size_n, j / size_n ,i / size_n, 0);
+                    /*if (){
+                        
+                    }
+                    else{
+                        
+                    }*/
+                }
+            }
+        }
         
     }
 private:
-    vector<Point> grid;
+    vector<Point> lattice;
+};
+
+
+class Matrix{
+public:
+
+private:
+    
+};
+
+
+class ISP{
+public:
+    ISP(){
+        
+    }
+
+private:
+    
 };
 
 int main(){
-    cout << M_PI << endl;
+    
     return 0;
 }
