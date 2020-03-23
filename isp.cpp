@@ -48,7 +48,6 @@ private:
     double eta;
 };
 
-
 class Source{
 public:
     Source(double theta_n, double phi_n, double amplitude_n){
@@ -68,57 +67,98 @@ public:
     double A(){
         return amplitude;
     }
-
+    
 private:
     double theta;
     double phi;
     double amplitude;
 };
 
+class Detectors{
+public:
+    Detectors(){
+        size = 0;
+    }
+    
+    Detectors(size_t size_n, double x_0, double y_0, double z_0, double radius){
+        //TODO: implement this
+    }
+    
+    size_t Size(){
+        return size;
+    }
+    
+    
+private:
+    vector<Point> detectors;
+    size_t size;
+};
 
 class Lattice{
 public:
-    Lattice(size_t size_n, double x_0, double y_0, double z_0, double radius){
-        vector<Point>lattice_temp;
-        for (size_t i = 0; i < (size_n + 1); i++){
-            for (size_t j = 0; j < (size_n + 1); j++){
-                for (size_t k = 0; k < (size_n + 1); k++){
-                    
-                    double x = (double)k / (double)size_n;
-                    double y = (double)j / (double)size_n;
-                    double z = (double)i / (double)size_n;
-                    
-                    lattice_temp.emplace_back(x, y , z, 0);
+    Lattice(){
+        size = 0;
+        len = 0;
+    }
+    
+    Lattice(size_t len_n, double x_0, double y_0, double z_0, double radius){
+        len = len_n;
+        size = len * len *len;
+        for (size_t i = 0; i < len; i++){
+            for (size_t j = 0; j < len; j++){
+                for (size_t k = 0; k < len; k++){
+                    make_cell(i, j, k, x_0, y_0, z_0, radius);
+                }
+            }
+        }
+    }
+    
+    void make_cell(size_t i, size_t j, size_t k, double x_0, double y_0, double z_0, double radius){
+        double x = (double)((2 * k) + 1)/(double)(2 * len);
+        double y = (double)((2 * j) + 1)/(double)(2 * len);
+        double z = (double)((2 * i) + 1)/(double)(2 * len);
+        
+        Point temp(x, y, z, 0);
+        
+        double sum = 0;
+        for (size_t l = 0; l < i + 2; i++){
+            for (size_t m = 0; m < j + 2; j++){
+                for (size_t n = 0; n < k + 2; k++){
+                    double x = (double)n / (double)len;
+                    double y = (double)m / (double)len;
+                    double z = (double)l / (double)len;
                     
                     if (((x-x_0)*(x-x_0)) + ((y-y_0)*(y-y_0)) + ((z-z_0)*(z-z_0)) <= radius * radius){
-                        
-                        lattice_temp[lattice_temp.size() - 1].set_Eta(med_coeff);
-                    
+                        sum += med_coeff;
                     }
                 }
             }
         }
-        
-        for (size_t i = 0; i < size_n; i++){
-            for (size_t j = 0; j < size_n; j++){
-                for (size_t k = 0; k < size_n; k++){
-                    //In this loop I will take the averages of eta we have in lattice_temp as we did in
-                    //make_gridn in the previous routine
-                    
-                }
-            }
-        }
-        
+        temp.set_Eta((double)sum / 8.0);
+        lattice.push_back(temp);
     }
+    
+    Point at(size_t i){
+        return lattice[i];
+    }
+    
+    size_t Size(){
+        return size;
+    }
+    
 private:
     vector<Point> lattice;
+    size_t len;
+    size_t size;
 };
+
 
 
 class Matrix{
 public:
-    Matrix(Lattice &l){
-        
+    Matrix(Lattice &l_n, Detectors &d_n){
+        l = l_n;
+        d = d_n;
     }
     
     complex<double> Ai(double rx, double ry, double rz, double theta, double phi){
@@ -134,23 +174,29 @@ public:
     }
     
     cx_mat Gv(){
-        
+        //TODO: implement this
     }
     
     cx_mat V(){
-        
+        cx_mat V_N(l.Size(), l.Size(), fill::zeros);
+        for (int i = 0; i < l.Size(); i++){
+            complex<double> num(freq * freq * l.at(i).Eta(), 0);
+            V_N(i,i) = num;
+        }
+        return V_N;
     }
     
     cx_mat Gd(){
-        
+        //TODO: implement this
     }
     
     cx_mat Gs(){
-        
+        //TODO: implement this
     }
 
 private:
-    
+    Lattice l = Lattice();
+    Detectors d = Detectors();
 };
 
 
@@ -168,3 +214,4 @@ int main(){
     
     return 0;
 }
+
