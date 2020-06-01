@@ -13,13 +13,23 @@
 
 class Source{
 public:
-    Source(double theta_n, double phi_n, double amplitude_n);
+    Source(double theta_n, double phi_n, double amplitude_n){
+        theta = theta_n;
+        phi = phi_n;
+        amplitude = amplitude_n;
+    }
     
-    double T();
+    double Theta() const {
+        return theta;
+    }
     
-    double P();
+    double Phi() const {
+        return phi;
+    }
     
-    double A();
+    double Amp() const {
+        return amplitude;
+    }
     
 private:
     double theta;

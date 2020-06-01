@@ -13,17 +13,32 @@
 
 class Point{
 public:
-    Point(double x_n, double y_n, double z_n, double eta_n);
+    Point(double x_n, double y_n, double z_n, double eta_n){
+        x = x_n;
+        y = y_n;
+        z = z_n;
+        eta = eta_n;
+    }
     
-    double  X();
+    double  X() const {
+        return x;
+    }
     
-    double Y();
+    double Y() const {
+        return y;
+    }
     
-    double Z();
+    double Z() const {
+        return z;
+    }
     
-    double Eta();
+    double Eta() const {
+        return eta;
+    }
     
-    void set_Eta(double eta_n);
+    void set_Eta(double eta_n){
+        eta = eta_n;
+    }
     
 private:
     double x;
