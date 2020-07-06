@@ -12,41 +12,35 @@
 #include <armadillo>
 #include <thread>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
+
+#include <chrono>
+using namespace std::chrono;
+
 using namespace std;
 using namespace arma;
 
-const double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+//const double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+const double pi = M_PI;
 
 const int num_squaresx = 10;
 const int num_squaresy = 10;
 const int num_squaresz = 10;
 const double dL = 1.0 / (num_squaresx);
 
-const int num_div = 100;
+const int num_div = 10;
 
 const double circle_centerx = .50;
 const double circle_centery = .50;
 const double circle_centerz = .50;
 const double circle_radius = .25;
 
-const double med_coeff = 1;
+/*const*/ double med_coeff = 0.1;
 
 const double freq = 1;
 
-double coherence(cx_mat A){
-    double max = 0.0;
-    for (int i = 0; i < A.n_cols; i++){
-        for (int j = 0; j < A.n_cols; j++){
-            if (i != j){
-                complex<double> num = abs(cdot(A.col(i), A.col(j))) / (sqrt(cdot(A.col(j), A.col(j))) * sqrt(cdot(A.col(i), A.col(i))));
-                if (real(num) > max){
-                    max = real(num);
-                }
-            }
-        }
-    }
-    return max;
-}
+
 
 void do_join(std::thread& t){t.join();}
 void join_all(std::vector<std::thread>& v){std::for_each(v.begin(),v.end(),do_join);}
@@ -60,6 +54,52 @@ void join_all(vector<vector<pair<double, double> > > &vectors){
             move(vectors[i].begin(), vectors[i].end(), back_inserter(vectors[0]));
         }
     }
+}
+
+/*void coherence_helper(cx_mat &A, vector<double> &data, vector<double> &cdots, int i){
+    double max = 0.0;
+    //complex<double> temp = sqrt(cdot(A.col(i), A.col(i)));
+    complex<double> temp = cdots[i];
+    for (int j = i; j < A.n_cols; j++){
+        if (i != j){
+            //complex<double> num = abs(cdot(A.col(i), A.col(j))) / (sqrt(cdot(A.col(j), A.col(j))) * temp);
+            complex<double> num = abs(cdot(A.col(i), A.col(j))) / (cdots[j] * temp);
+            if (real(num) > max){
+                max = real(num);
+            }
+        }
+    }
+    data[i] = max;
+}*/
+
+double coherence(cx_mat A){
+    vector<double> data(A.n_cols, 0);
+    //vector<thread> threads;
+    
+    vector<double> cdots;
+    for (int i = 0; i < A.n_cols; i++){
+        cdots.push_back(real(sqrt(cdot(A.col(i), A.col(i)))));
+    }
+    
+    for (int i = 0; i < A.n_cols; i++){
+        //threads.push_back(thread(coherence_helper, ref(A), ref(data), ref(cdots), i));
+        double max = 0.0;
+        //complex<double> temp = sqrt(cdot(A.col(i), A.col(i)));
+        complex<double> temp = cdots[i];
+        for (int j = i; j < A.n_cols; j++){
+            if (i != j){
+                //complex<double> num = abs(cdot(A.col(i), A.col(j))) / (sqrt(cdot(A.col(j), A.col(j))) * temp);
+                complex<double> num = abs(cdot(A.col(i), A.col(j))) / (cdots[j] * temp);
+                if (real(num) > max){
+                    max = real(num);
+                }
+            }
+        }
+        data[i] = max;
+    }
+    //join_all(threads);
+    
+    return *max_element(data.begin(), data.end());
 }
 
 void initialize_grid(double (&grid)[num_squaresy + 1][num_squaresx + 1][num_squaresz + 1][4], const int num_squaresx, const int num_squaresy, const int num_squaresz){
@@ -90,8 +130,8 @@ void make_circle(double (&grid)[num_squaresy + 1][num_squaresx + 1][num_squaresz
 }
 
 void make_detectors(vector<vector<double> > &detectors){
-    int num1 = 40;
-    int num2 = 20;
+    int num1 = 32;
+    int num2 = 16;
     detectors.reserve(num1 * num2);
     for (int i = 0; i < num1; i++){
         for (int j = 0; j < num2; j++){
@@ -101,6 +141,18 @@ void make_detectors(vector<vector<double> > &detectors){
             detectors.push_back({x, y, z});
         }
     }
+    
+    /*int num1 = 30;
+    int num2 = 30;
+    detectors.reserve(num1 * num2);
+    for (int i = 0; i < num1; i++){
+        for (int j = 0; j < num2; j++){
+            double x = (4 * cos((-pi / 2.0 ) + ((i * pi) / num1)) * sin((j * pi) / num2)) + 0.5;
+            double y = (4 * sin((-pi / 2.0 ) + ((i * pi) / num1)) * sin((j * pi) / num2)) + 0.5;
+            double z = (4 * cos((j * pi) / num2)) + 0.5;
+            detectors.push_back({x, y, z});
+        }
+    }*/
 }
 
 void make_thetas_test(vector<pair<double, double> > &thetas_test){
@@ -227,46 +279,32 @@ void make_Gv(cx_mat& Gv, double gridn[num_squaresy][num_squaresx][num_squaresz][
 
 void make_Ai_num(cx_mat& Ai_num, vector<vector<double> > thetas_num, vector<vector<double> > detectors){
     for (int i = 0; i < detectors.size(); i++){
-        complex<double> sum(0, 0);
         for (int j = 0; j < thetas_num.size(); j++){
-            sum += thetas_num[j][2] * Ai(detectors[i][0], detectors[i][1], detectors[i][2], thetas_num[j][0], thetas_num[j][1]);
+            Ai_num(i, j) = thetas_num[j][2] * Ai(detectors[i][0], detectors[i][1], detectors[i][2], thetas_num[j][0], thetas_num[j][1]);
         }
-        Ai_num(i, 0) = sum;
-    }
-}
-
-void Ai_test_helper(cx_mat& Ai_test, vector<pair<double, double> > thetas_test, vector<vector<double> > detectors, int i){
-    for (int y = 0; y < thetas_test.size(); y++){
-        Ai_test(i, y) = Ai(detectors[i][0], detectors[i][1], detectors[i][2], thetas_test[y].first, thetas_test[y].second);
     }
 }
 
 void make_Ai_test(cx_mat& Ai_test, vector<pair<double, double> > thetas_test, vector<vector<double> > detectors){
-    vector<thread> threads;
     for (int i = 0; i < detectors.size(); i++){
-        threads.push_back(thread(Ai_test_helper, ref(Ai_test), thetas_test, detectors, i));
-    }
-    join_all(threads);
-}
-
-void Gs_test_helper(cx_mat& Gs, double gridn[num_squaresy][num_squaresx][num_squaresz][4], vector<pair<double, double> > thetas_test, int n, int i, int j, int k){
-    for (int y = 0; y < thetas_test.size(); y++){
-        Gs(n, y) = Ai(gridn[i][j][k][1], gridn[i][j][k][2], gridn[i][j][k][3], thetas_test[y].first, thetas_test[y].second);
+        for (int y = 0; y < thetas_test.size(); y++){
+            Ai_test(i, y) = Ai(detectors[i][0], detectors[i][1], detectors[i][2], thetas_test[y].first, thetas_test[y].second);
+        }
     }
 }
 
 void make_Gs_test(cx_mat& Gs, double gridn[num_squaresy][num_squaresx][num_squaresz][4], vector<pair<double, double> > thetas_test){
-    vector<thread> threads;
     int n = 0;
     for (int i = 0; i < num_squaresy; i++){
         for (int j = 0; j < num_squaresx; j++){
             for (int k = 0; k < num_squaresz; k++){
-                threads.push_back(thread(Gs_test_helper, ref(Gs), gridn, thetas_test, n, i, j, k));
+                for (int y = 0; y < thetas_test.size(); y++){
+                    Gs(n, y) = Ai(gridn[i][j][k][1], gridn[i][j][k][2], gridn[i][j][k][3], thetas_test[y].first, thetas_test[y].second);
+                }
                 n++;
             }
         }
     }
-    join_all(threads);
 }
 
 double f_xx(cx_vec x, int n){
@@ -293,7 +331,7 @@ void find_2_largest(int n, cx_vec x, vector<pair<double, double> > thetas_test, 
     int max_2_index = 0;
     int max_3_index = 0;
     int end = n + 9;
-    for (int j = n; j < end; j++){l
+    for (int j = n; j < end; j++){
         if (real(x(j)) > max){
             max_3 = max_2;
             max_2 = max;
@@ -321,7 +359,7 @@ void find_2_largest(int n, cx_vec x, vector<pair<double, double> > thetas_test, 
 void first_groupings(int n, cx_vec x, double delta, double mean_vec, vector<pair<double, double> > thetas_test, vector<pair<double, double> > &new_vals){
     int end = n + num_div - 1;
     for (int j = n; j < end; j++){
-        if (real(x(j)) > (30 * mean_vec) && D(x, j) > 0.5 && f_xx(x, j) < -0.5){
+        if (real(x(j)) > (mean_vec) /*&& D(x, j) > 0.5 && f_xx(x, j) < -0.5*/){
             new_vals.push_back({thetas_test[j].first, thetas_test[j].second});
             new_vals.push_back({thetas_test[j].first + delta, thetas_test[j].second});
             new_vals.push_back({thetas_test[j].first - delta, thetas_test[j].second});
@@ -341,7 +379,7 @@ void second_groupings(int n, cx_vec x, double delta, double mean_vec, vector<pai
     unsigned long int end = n + 20;
     if (thetas_test.size() - n - 1 < 19){end = thetas_test.size();}
     for (int j = n; j < end; j++){
-        if (real(x(j)) > 3 * mean_vec){
+        if (real(x(j)) > mean_vec){
             new_vals.push_back({thetas_test[j].first, thetas_test[j].second});
             new_vals.push_back({thetas_test[j].first + delta, thetas_test[j].second});
             new_vals.push_back({thetas_test[j].first - delta, thetas_test[j].second});
@@ -357,7 +395,31 @@ void second_groupings(int n, cx_vec x, double delta, double mean_vec, vector<pai
     }
 }
 
-void print_result(vector<pair<double, double> > &thetas_test, cx_mat x){
+void print_data(vector<pair<pair<double, double>, double> > vals_counters, vector<double> temp, double i_theta_1, double i_theta_2, double i_phi_1, double i_phi_2){
+    if (vals_counters.size() != 2){
+        cout << " & inf & inf & inf" << flush;
+    }
+    
+    else{
+        int index_1 = 0;
+        int index_2 = 1;
+        
+        if (vals_counters[1].first.first < vals_counters[0].first.first){
+            index_1 = 1;
+            index_2 = 0;
+        }
+        
+        double d_theta = max(abs(vals_counters[index_1].first.first - i_theta_1), abs(vals_counters[index_2].first.first - i_theta_2));
+        double d_phi = max(abs(vals_counters[index_1].first.second - i_phi_1), abs(vals_counters[index_2].first.second - i_phi_2));
+        double d_amp = max(abs(temp[index_1] - 1), abs(temp[index_1] - 1));
+        
+        cout << " & " << d_theta << " & " <<  d_phi << " & " << d_amp << flush;
+        
+    }
+    
+}
+
+void print_result(vector<pair<double, double> > &thetas_test, cx_mat x, double &Cond, double i_theta_1, double i_theta_2, double i_phi_1, double i_phi_2){
     vector<pair<pair<double, double>, double> > vals_counters;
     vector<double> temp;
     for (int i = 0; i < x.n_elem; i++){
@@ -379,12 +441,19 @@ void print_result(vector<pair<double, double> > &thetas_test, cx_mat x){
         }
     }
     for (int m = 0; m < vals_counters.size(); m++){
-        cout << vals_counters[m].first.first << " " << vals_counters[m].first.second << " " << temp[m] << endl;
-        
+        //cout << vals_counters[m].first.first << " " << vals_counters[m].first.second << " " << temp[m] << endl;
+        cout << "(" << vals_counters[m].first.first << "," << vals_counters[m].first.second << "," << temp[m] << ")" << flush;
     }
+    
+    print_data(vals_counters, temp, i_theta_1, i_theta_2, i_phi_1, i_phi_2);
+    
+    cout << " & " << flush;
+    cout << Cond << " & " << flush;
 }
 
-void algo(vector<pair<double, double> > thetas_test, vector<vector<double> > detectors, cx_mat As_part, cx_mat A_num, double gridn[num_squaresy][num_squaresx][num_squaresz][4], int i){
+
+
+void algo(vector<pair<double, double> > thetas_test, vector<vector<double> > detectors, cx_mat As_part, cx_mat A_num, double gridn[num_squaresy][num_squaresx][num_squaresz][4], int i, double &Cond, double i_theta_1, double i_theta_2, double i_phi_1, double i_phi_2){
     cx_mat Gs_test (num_squaresy * num_squaresx * num_squaresz, thetas_test.size());
     cx_mat Ai_test (detectors.size(), thetas_test.size());
     thread t14 (make_Gs_test, ref(Gs_test), gridn, thetas_test);
@@ -393,21 +462,24 @@ void algo(vector<pair<double, double> > thetas_test, vector<vector<double> > det
     t14.join();
     cx_mat As_test = As_part * Gs_test;
     cx_mat A_test = As_test + Ai_test;
-    cout << coherence(A_test) << " ";
+    //cout << coherence(A_test) << " ";
     cx_vec x = solve(A_test, A_num);
     
     if (i == 1){
-        ofstream out("output.txt");
+        
+        /*ofstream out("output_" + to_string(n) + ".txt");
+        
         for (int j = 0; j < x.n_elem; j++){
             out << thetas_test[j].first << " " << thetas_test[j].second << " " << real(x(j)) << endl;
         }
-        out.close(); 
+        
+        out.close();*/
+        
+        Cond = cond(Ai_test);
     }
     
-    
-    else if (i == 10){
-        cout << endl << endl;
-        print_result(thetas_test, x);
+    if (i == 40){
+        print_result(thetas_test, x, Cond, i_theta_1, i_theta_2, i_phi_1, i_phi_2);
         return;
     }
     
@@ -446,54 +518,70 @@ void algo(vector<pair<double, double> > thetas_test, vector<vector<double> > det
         k++;
     }
     join_all(vectors);
-    return algo(vectors[0], detectors, As_part, A_num, gridn, ++i);
+    
+    return algo(vectors[0], detectors, As_part, A_num, gridn, ++i, Cond, i_theta_1, i_theta_2, i_phi_1, i_phi_2);
 }
 
 
 int main() {
     
-    double grid[num_squaresy + 1][num_squaresx + 1][num_squaresz + 1][4];
-    double gridn[num_squaresy][num_squaresx][num_squaresz][4];
-    vector<vector<double> > detectors;
-    vector<pair<double, double> > thetas_test;
-    thread t0 (make_space, ref(grid), ref(gridn));
-    thread t1 (make_detectors, ref(detectors));
-    thread t2 (make_thetas_test, ref(thetas_test));
-    t0.join();
-    t1.join();
-    t2.join();
+auto start = high_resolution_clock::now();
+
+double grid[num_squaresy + 1][num_squaresx + 1][num_squaresz + 1][4];
+double gridn[num_squaresy][num_squaresx][num_squaresz][4];
+vector<vector<double> > detectors;
+vector<pair<double, double> > thetas_test;
+thread t0 (make_space, ref(grid), ref(gridn));
+thread t1 (make_detectors, ref(detectors));
+thread t2 (make_thetas_test, ref(thetas_test));
+t0.join();
+t1.join();
+t2.join();
+    
+    
+    
+    
+    
+        
+int i = 0;
+while (i <= 15){
+
+    
+    cout << i << " & " << flush;
+    
+    
+    double num = (0.5 * i) / 15.0;
     
     vector<vector<double> > thetas_num;
-    thetas_num.push_back({1.5, 1.5, 1.0});
-    thetas_num.push_back({2.0, 2.0, .8});
-    thetas_num.push_back({3.0, 3.0, .5});
-    thetas_num.push_back({1.0, 1.0, .5});
-    thetas_num.push_back({1.0, 1.5, .5});
-    thetas_num.push_back({3.0, 1.5, 1.0});
+    thetas_num.push_back({1.0 + num, 1.5, 1.0});
+    thetas_num.push_back({2.0 - num, 1.5, 1.0});
+    
+    cout << thetas_num[0][0] << " & " << thetas_num[1][0] << " & " << flush;
+    
     
     cx_mat Gd(detectors.size(), num_squaresy * num_squaresx * num_squaresz);
     cx_mat V(num_squaresy * num_squaresx * num_squaresz, num_squaresy * num_squaresx * num_squaresz, fill::zeros);
     cx_mat Gv(num_squaresy * num_squaresx * num_squaresz, num_squaresy * num_squaresx * num_squaresz);
     cx_mat Gs(num_squaresy * num_squaresx * num_squaresz, thetas_num.size());
-    cx_mat Ai_num (detectors.size(), 1);
+    cx_mat Ai_num (detectors.size(), thetas_num.size());
     thread t3 (make_Gd, ref(Gd), gridn, detectors);
     thread t4 (make_V, ref(V), gridn);
-    thread t5 (make_Gv, ref(Gv), gridn);
+    //thread t5 (make_Gv, ref(Gv), gridn);
     thread t6 (make_Gs, ref(Gs), gridn, thetas_num);
     thread t7 (make_Ai_num, ref(Ai_num), thetas_num, detectors);
     t3.join();
-    cout << "MADE GD" << endl;
+    //cout << "MADE GD" << endl;
     t4.join();
-    cout << "MADE V" << endl;
-    t5.join();
-    cout << "MADE GV" << endl;
+    //cout << "MADE V" << endl;
+    //t5.join();
+    //cout << "MADE GV" << endl;
     t6.join();
-    cout << "MADE GS" << endl;
+    //cout << "MADE GS" << endl;
     t7.join();
-    cout << "MADE Ai_NUM (NONSCATTERED DATA INPUT)" << endl;
+    //cout << "MADE Ai_NUM (NONSCATTERED DATA INPUT)" << endl;
     
     
-    cx_mat Gd_V;
+    /*cx_mat Gd_V;
     cx_mat Gv_V;
     cx_mat Id;
     cx_mat in;
@@ -510,10 +598,27 @@ int main() {
     cx_mat As_num = sum(As_part * Gs, 1);
     cout << "MADE AS_NUM (SCATTERED DATA INPUT)" << endl;
     cx_mat A_num = As_num + Ai_num;
-    cout << "MADE A_NUM (DATA INPUT)" << endl << endl;
+    cout << "MADE A_NUM (DATA INPUT)" << endl << endl;*/
     
+    cx_mat As_part = Gd * V;
+    cx_mat A_num = sum((As_part * Gs) + Ai_num, 1);
     
-    algo(thetas_test, detectors, As_part, A_num, gridn, 1);
+    double Coherence = coherence(Ai_num);
+    double Cond = 0.0;
+    
+    algo(thetas_test, detectors, As_part, A_num, gridn, 1, Cond, thetas_num[0][0], thetas_num[1][0], thetas_num[0][1], thetas_num[1][1]);
+    
+    cout << Coherence << " \\\\ \\hline" << endl;
+    
+    i++;
+}
+
+auto stop = high_resolution_clock::now();
+
+auto duration = duration_cast<microseconds>(stop - start);
+
+cout << endl << duration.count() << endl;
+    
     return 0;
 }
 

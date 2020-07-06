@@ -25,4 +25,29 @@ std::complex<double> G(double rx, double ry, double rz, double rxs, double rys, 
     return num * exp(numtop);
 }
 
+double coherence(arma::cx_mat A){
+    std::vector<double> data(A.n_cols, 0);
+    
+    std::vector<double> cdots;
+    for (int i = 0; i < A.n_cols; i++){
+        cdots.push_back(real(sqrt(cdot(A.col(i), A.col(i)))));
+    }
+    
+    for (int i = 0; i < A.n_cols; i++){
+        double max = 0.0;
+        std::complex<double> temp = cdots[i];
+        for (int j = i; j < A.n_cols; j++){
+            if (i != j){
+                std::complex<double> num = abs(cdot(A.col(i), A.col(j))) / (cdots[j] * temp);
+                if (real(num) > max){
+                    max = real(num);
+                }
+            }
+        }
+        data[i] = max;
+    }
+    
+    return *max_element(data.begin(), data.end());
+}
+
 #endif /* utility_hpp */
