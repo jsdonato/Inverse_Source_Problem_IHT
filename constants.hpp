@@ -9,7 +9,7 @@
 #ifndef constants_hpp
 #define constants_hpp
 
-const double freq = 1;
+const double freq = 1.0;
 
 const int num_div = 10;
 

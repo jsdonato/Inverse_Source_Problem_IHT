@@ -50,4 +50,12 @@ double coherence(arma::cx_mat A){
     return *max_element(data.begin(), data.end());
 }
 
+double real_accumulate(arma::cx_vec x, int begin, int end){
+    double sum = 0.0;
+    for (int i = begin; i < end; i++){
+        sum += real(x(i));
+    }
+    return sum;
+}
+
 #endif /* utility_hpp */

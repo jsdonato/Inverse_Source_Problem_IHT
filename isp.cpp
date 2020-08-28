@@ -8,7 +8,7 @@
 class ISP{
 public:
     ISP(){
-        for (int i = 0; i <= 15; i++){
+        for (int i = 0; i <= 0; i++){
             std::cout << i << " & ";
             d_theta = (0.5 * i) / 15.0;
             
@@ -27,9 +27,16 @@ public:
             sources.clear();
         }
         
-        sources.emplace_back(1.0 + d_theta, 1.5, 1.0);
-        sources.emplace_back(2.0 - d_theta, 1.5, 1.0);
-        //sources.emplace_back(1.5, 1.5, 1.0);
+        /*sources.emplace_back(1.0 + d_theta, 1.5, 1.0);
+        sources.emplace_back(2.0 - d_theta, 1.5, 1.0);*/
+        
+        sources.emplace_back(2.0, 0.5, 1.0);
+        sources.emplace_back(2.0, 1.0, 1.0);
+        sources.emplace_back(2.0, 1.5, 1.0);
+        
+        sources.emplace_back(1.0, 0.5, 1.0);
+        sources.emplace_back(1.0, 1.0, 1.0);
+        
         
         std::cout << sources[0].Theta() << " & " << sources[1].Theta() << " & ";
     }
@@ -59,43 +66,50 @@ public:
         arma::cx_mat G_s_test = Gs(lattice, test_sources);
         arma::cx_mat A_i_test = Ai(test_sources, detectors);
         arma::cx_mat A_test = (A_s_part * G_s_test) + A_i_test;
-        x = arma::solve(A_test, A_num);
+        x = solve_regular(A_test);
        
         Cond = arma::cond(A_test);
        
         //print_x(0);
+        std::cout << "\n";
        
-        //std::cout << "\n";
+        /*std::vector<Source> new_test_sources_3;
+       
+        threshold_max_of_groups(0, new_test_sources_3);
+       
+        test_sources = new_test_sources_3;*/
         
         for (int i = 0; i < 100; i++){
             
             delta *= (7.0 / 8.0); //should be greater than 0.71
-            std::vector<Source> new_test_sources;
-            if (i % 2 == 0){
-                
-                refine(i, new_test_sources);
-            }
             
-            else if (i % 2 == 1){
-                find_largest(i, new_test_sources);
-            }
-            
-            test_sources = new_test_sources;
-            
-            //std::cout << i << "," << test_sources.size() << "\n";
-            
+            refine(i);
+    
             G_s_test = Gs(lattice, test_sources);
             A_i_test = Ai(test_sources, detectors);
             A_test = (A_s_part * G_s_test) + A_i_test;
             
             x = solve_regular(A_test);
-            
-            make_vec_x();
-            
             //print_x(i + 1);
+            std::cout << i << "," << test_sources.size() << " ";
+            /*for (int i = 0; i < 5; i++){
+                std::cout << "(" << test_sources[i].Theta() << "," << test_sources[i].Phi() << ")";
+            }*/
+            std::cout << "\n";
             
+            threshold_max_of_groups(i);
             
+            group_sources();
+        
         }
+       
+       
+        G_s_test = Gs(lattice, test_sources);
+        A_i_test = Ai(test_sources, detectors);
+        A_test = (A_s_part * G_s_test) + A_i_test;
+       
+        x = solve_regular(A_test);
+       
     }
     
     void make_test_sources(){
@@ -110,79 +124,198 @@ public:
         }
     }
     
-    void refine(const int &k, std::vector<Source> &new_test_sources){
-        double mean = real(arma::mean(x));
-        double threshold = 0.5 * mean;
-        
-        /*if (k >= 50){
-            threshold *= 2;
-        }*/
+    void refine(const int &k){
+        std::vector<Source> new_test_sources;
         
         for (int i = 0; i < test_sources.size(); i++){
-            if (real(x(i)) > threshold /*&& real(x(i)) > 0.0*/){
-                double theta = test_sources[i].Theta();
-                double phi = test_sources[i].Phi();
+            double theta = test_sources[i].Theta();
+            double phi = test_sources[i].Phi();
                 
-                new_test_sources.emplace_back(theta, phi, 1.0);
+            new_test_sources.emplace_back(theta, phi, 1.0);
+            
+            new_test_sources.emplace_back(theta + delta, phi, 1.0);
+            new_test_sources.emplace_back(theta - delta, phi, 1.0);
                 
-                new_test_sources.emplace_back(theta + delta, phi, 1.0);
-                new_test_sources.emplace_back(theta - delta, phi, 1.0);
+            new_test_sources.emplace_back(theta, phi + delta, 1.0);
+            new_test_sources.emplace_back(theta, phi - delta, 1.0);
                 
-                new_test_sources.emplace_back(theta, phi + delta, 1.0);
-                new_test_sources.emplace_back(theta, phi - delta, 1.0);
+            new_test_sources.emplace_back(theta + delta, phi + delta, 1.0);
+            new_test_sources.emplace_back(theta + delta, phi - delta, 1.0);
+            new_test_sources.emplace_back(theta - delta, phi + delta, 1.0);
+            new_test_sources.emplace_back(theta - delta, phi - delta, 1.0);
                 
-                new_test_sources.emplace_back(theta + delta, phi + delta, 1.0);
-                new_test_sources.emplace_back(theta + delta, phi - delta, 1.0);
-                new_test_sources.emplace_back(theta - delta, phi + delta, 1.0);
-                new_test_sources.emplace_back(theta - delta, phi - delta, 1.0);
+            new_test_sources.emplace_back(theta + (0.5 * delta), phi, 1.0);
+            new_test_sources.emplace_back(theta - (0.5 * delta), phi, 1.0);
                 
-                new_test_sources.emplace_back(theta + (0.5 * delta), phi, 1.0);
-                new_test_sources.emplace_back(theta - (0.5 * delta), phi, 1.0);
+            new_test_sources.emplace_back(theta, phi + (0.5 * delta), 1.0);
+            new_test_sources.emplace_back(theta, phi - (0.5 * delta), 1.0);
                 
-                new_test_sources.emplace_back(theta, phi + (0.5 * delta), 1.0);
-                new_test_sources.emplace_back(theta, phi - (0.5 * delta), 1.0);
-                
-                new_test_sources.emplace_back(theta + (0.5 * delta), phi + (0.5 * delta), 1.0);
-                new_test_sources.emplace_back(theta + (0.5 * delta), phi - (0.5 * delta), 1.0);
-                new_test_sources.emplace_back(theta - (0.5 * delta), phi + (0.5 * delta), 1.0);
-                new_test_sources.emplace_back(theta - (0.5 * delta), phi - (0.5 * delta), 1.0);
+            new_test_sources.emplace_back(theta + (0.5 * delta), phi + (0.5 * delta), 1.0);
+            new_test_sources.emplace_back(theta + (0.5 * delta), phi - (0.5 * delta), 1.0);
+            new_test_sources.emplace_back(theta - (0.5 * delta), phi + (0.5 * delta), 1.0);
+            new_test_sources.emplace_back(theta - (0.5 * delta), phi - (0.5 * delta), 1.0);
              
-            }
         }
+        
+        test_sources = new_test_sources;
     }
     
     void find_largest(const int &k, std::vector<Source> &new_test_sources){
         for (int i = 0; i < test_sources.size(); i += 17){
             int end = i + 17;
             double max = 0.0;
-            double max_2 = 0.0;
-            double max_3 = 0.0;
             int max_index = 0;
-            int max_2_index = 0;
-            int max_3_index = 0;
             for (int j = i; j < end; j++){
                 if (real(x(j)) > max){
-                    max_3 = max_2;
-                    max_2 = max;
                     max = real(x(j));
-                    max_3_index = max_2_index;
-                    max_2_index = max_index;
                     max_index = j;
-                }
-                else if (real(x(j)) > max_2){
-                    max_3 = max_2;
-                    max_2 = real(x(j));
-                    max_3_index = max_2_index;
-                    max_2_index = j;
-                }
-                else if (real(x(j)) > max_3){
-                    max_3 = real(x(j));
-                    max_3_index = j;
                 }
             }
             new_test_sources.emplace_back(test_sources[max_index].Theta(), test_sources[max_index].Phi(), 1.0);
-            //new_test_sources.emplace_back(test_sources[max_2_index].Theta(), test_sources[max_2_index].Phi(), 1.0);
         }
+    }
+    
+    void threshold_max_of_groups(const int &m){
+        std::vector<Source> new_test_sources;
+        
+        std::vector<int> max_indicies;
+        double sum = 0.0;
+        for (int i = 0; i < test_sources.size(); i += 17){
+            int end = i + 17;
+            double max = 0.0;
+            int max_index = 0;
+            for (int j = i; j < end; j++){
+                if (real(x(j)) > max){
+                    max = real(x(j));
+                    max_index = j;
+                }
+                
+            }
+            sum += max;
+            max_indicies.push_back(max_index);
+        }
+        
+        double threshold = 0.25 * (sum / (double)max_indicies.size());
+        for (int k = 0; k < max_indicies.size(); k++){
+            if (real(x(max_indicies[k])) > threshold){
+               new_test_sources.emplace_back(test_sources[max_indicies[k]].Theta(), test_sources[max_indicies[k]].Phi(), 1.0);
+            }
+        }
+        
+        test_sources = new_test_sources;
+    }
+    
+    void threshold_average_of_groups(const int &m){
+        std::vector<Source> new_test_sources;
+        
+        double threshold = real(arma::mean(x));
+        
+        for (int i = 0; i < test_sources.size(); i += 17){
+            int end = i + 17;
+            double sum = 0.0;
+            double max = 0.0;
+            int max_index = 0;
+            for (int j = i; j < end; j++){
+                if (real(x(j)) > max){
+                    max = real(x(j));
+                    max_index = j;
+                }
+                sum += real(x(j));
+            }
+            if ((sum / 17.0) > 0.5 * threshold){
+                new_test_sources.emplace_back(test_sources[max_index].Theta(), test_sources[max_index].Phi(), 1.0);
+            }
+        }
+        
+        test_sources = new_test_sources;
+    }
+    
+    void threshold_double(const int &m){
+        std::vector<Source> new_test_sources;
+        
+        double sum_2 = 0.0;
+        std::vector<int> kept_indicies;
+        for (int i = 0; i < test_sources.size(); i += 17){
+            int end = i + 17;
+            double threshold = 2.0 * (real_accumulate(x, i, end) / 17.0);
+            if (m > 11){
+                threshold = 1.65 * (real_accumulate(x, i, end) / 17.0);
+            }
+            for (int j = i; j < end; j++){
+                if (real(x(j)) > threshold){
+                    sum_2 += real(x(j));
+                    kept_indicies.push_back(j);
+                }
+            }
+        }
+        
+        double threshold = 2.0 * (sum_2 / (double)kept_indicies.size());
+        if (m > 11){
+            threshold = 1.65 * (sum_2 / (double)kept_indicies.size());
+        }
+        for (int k = 0; k < kept_indicies.size(); k++){
+            if (real(x(kept_indicies[k])) > threshold){
+                new_test_sources.emplace_back(test_sources[kept_indicies[k]].Theta(), test_sources[kept_indicies[k]].Phi(), 1.0);
+            }
+        }
+        
+        test_sources = new_test_sources;
+    }
+    
+    void threshold_to_test(const int &m){
+        std::vector<Source> new_test_sources;
+        
+        if (m < 7){
+            arma::uvec B = arma::sort_index(arma::real(x), "descend");
+            for (int i = 0; i < 50; i++){
+               new_test_sources.emplace_back(test_sources[B(i)].Theta(), test_sources[B(i)].Phi(), 1.0);
+            }
+        }
+        
+        else {
+            for (int i = 0; i < test_sources.size(); i += 9){
+                int end = i + 9;
+                double max = 0.0;
+                int max_index = 0;
+                for (int j = i; j < end; j++){
+                    if (real(x(j)) > max){
+                        max = real(x(j));
+                        max_index = j;
+                    }
+                    
+                }
+                new_test_sources.emplace_back(test_sources[max_index].Theta(), test_sources[max_index].Phi(), 1.0);
+            }
+        }
+        
+        test_sources = new_test_sources;
+    }
+    
+    void group_sources(){
+        std::vector<Source> new_test_sources;
+        
+        std::vector<double> vals_counters;
+        for (int i = 0; i < test_sources.size(); i++){
+            bool in = false;
+            for (int j = 0; j < vals_counters.size(); j++){
+                double d_T = test_sources[i].Theta() - new_test_sources[j].Theta();
+                double d_P = test_sources[i].Phi() - new_test_sources[j].Phi();
+                if (d_T < 0.001 && d_P < 0.001){
+                    double CMA_theta = vals_counters[j] * new_test_sources[j].Theta();
+                    double CMA_phi = vals_counters[j] * new_test_sources[j].Phi();
+                    vals_counters[j]++;
+                    new_test_sources[j].set_Theta((test_sources[i].Theta() + CMA_theta) / vals_counters[j]);
+                    new_test_sources[j].set_Phi((test_sources[i].Phi() + CMA_phi) / vals_counters[j]);
+                    in = true;
+                }
+            }
+            if (!in){
+                vals_counters.push_back(1);
+                new_test_sources.emplace_back(test_sources[i].Theta(), test_sources[i].Phi(), 1.0);
+            }
+        }
+        test_sources = new_test_sources;
+        
     }
     
     arma::cx_vec solve_regular(arma::cx_mat &A_test){
@@ -198,7 +331,7 @@ public:
         for (int i = 0; i < x.n_elem; i++){
             bool in = false;
             for (int j = 0; j < vals_counters.size(); j++){
-                if (abs(test_sources[i].Theta() - vals_counters[j].first.first) < .2 && abs(test_sources[i].Phi() - vals_counters[j].first.second) < .2){
+                if (abs(test_sources[i].Theta() - vals_counters[j].first.first) < 0.1 && abs(test_sources[i].Phi() - vals_counters[j].first.second) < 0.1){
                     double CMA_theta = vals_counters[j].second * vals_counters[j].first.first;
                     double CMA_phi = vals_counters[j].second * vals_counters[j].first.second;
                     vals_counters[j].second++;
@@ -284,6 +417,7 @@ private:
 };
 
 int main(){
+   
     ISP();
     
     return 0;

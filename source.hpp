@@ -31,6 +31,14 @@ public:
         return amplitude;
     }
     
+    void set_Theta(double T_n){
+        theta = T_n;
+    }
+    
+    void set_Phi(double P_n){
+        phi = P_n;
+    }
+    
 private:
     double theta;
     double phi;
