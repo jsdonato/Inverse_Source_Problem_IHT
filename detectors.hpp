@@ -1,11 +1,3 @@
-//
-//  detectors.hpp
-//  ISP3C
-//
-//  Created by Joseph Donato on 4/5/20.
-//  Copyright © 2020 Joseph Donato. All rights reserved.
-//
-
 #ifndef detectors_hpp
 #define detectors_hpp
 
