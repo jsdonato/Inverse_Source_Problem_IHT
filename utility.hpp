@@ -1,11 +1,3 @@
-//
-//  utility.hpp
-//  ISP3C
-//
-//  Created by Joseph Donato on 5/31/20.
-//  Copyright © 2020 Joseph Donato. All rights reserved.
-//
-
 #ifndef utility_hpp
 #define utility_hpp
 
