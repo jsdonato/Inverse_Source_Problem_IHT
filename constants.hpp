@@ -1,11 +1,3 @@
-//
-//  constants.hpp
-//  ISP3C
-//
-//  Created by Joseph Donato on 5/30/20.
-//  Copyright © 2020 Joseph Donato. All rights reserved.
-//
-
 #ifndef constants_hpp
 #define constants_hpp
 
