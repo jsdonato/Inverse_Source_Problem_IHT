@@ -5,11 +5,13 @@
 #include <cmath>
 #include <complex>
 
+//Solution to wave equation with no scattering.
 std::complex<double> Ai(double rx, double ry, double rz, double theta, double phi){
     std::complex<double> num(0.0, freq * ((rx * std::cos(theta) * std::sin(phi)) + (ry * std::sin(theta) * std::sin(phi)) + (rz * std::cos(phi))));
     return exp(num);
 }
 
+//Green's function
 std::complex<double> G(double rx, double ry, double rz, double rxs, double rys, double rzs){
     double mag = std::sqrt(std::pow(rx - rxs, 2) + std::pow(ry - rys, 2) + std::pow(rz - rzs, 2));
     double num = (1 / (4 * M_PI * mag));
@@ -17,6 +19,8 @@ std::complex<double> G(double rx, double ry, double rz, double rxs, double rys, 
     return num * exp(numtop);
 }
 
+//returns the Mutual Coherence of matrix.
+//https://en.wikipedia.org/wiki/Mutual_coherence_(linear_algebra)
 double coherence(arma::cx_mat A){
     std::vector<double> data(A.n_cols, 0);
     
@@ -42,6 +46,7 @@ double coherence(arma::cx_mat A){
     return *max_element(data.begin(), data.end());
 }
 
+//Returns the sum of the real parts of a complex vector.
 double real_accumulate(arma::cx_vec x, int begin, int end){
     double sum = 0.0;
     for (int i = begin; i < end; i++){
