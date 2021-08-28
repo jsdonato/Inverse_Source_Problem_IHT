@@ -11,6 +11,7 @@
 
 class Lattice{
 public:
+    //This constructor makes a lattice with uniform eta throughout.
     Lattice(){
         for (size_t i = 0; i < len; i++){
             for (size_t j = 0; j < len; j++){
@@ -21,6 +22,7 @@ public:
         }
     }
     
+    //This constructor makes a lattice with a spherical region filled set to eta and the rest set to zero.
     Lattice(double x_0, double y_0, double z_0, double radius){
         for (size_t i = 0; i < len; i++){
             for (size_t j = 0; j < len; j++){
