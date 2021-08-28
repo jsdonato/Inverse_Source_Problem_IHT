@@ -7,7 +7,7 @@
 
 class Detectors{
 public:
-    
+    //This constructor constructs a sphere of 800 evenly spaced detectors around the medium centered at (x_0, y_0, z_0)
     Detectors(double x_0, double y_0, double z_0, double radius){
         int num1 = 40;
         int num2 = 20;
