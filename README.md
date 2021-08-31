@@ -41,6 +41,7 @@ The following is the key for the parameters listed above.
 | `d_amp` | The error present in the parameter `amp`.  The procedure used to compute `d_theta` is used to compute `d_amp` but within the context of the amplitude (`amp`) parameter. |
 | `cond` | The conditional number of `A_test` before the algorithm begins.|
 | `coherence` | The mutual coherence of `A_num` before each row is accumulated together.|
+
 NOTE: The reason the parameters in the output are separated by an ampersand `&` and end with a `\\ \hline` is so that the user may easily tabulate the data in LaTeX
 
 
