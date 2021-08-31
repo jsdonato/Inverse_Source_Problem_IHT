@@ -27,7 +27,7 @@ const int num_iter = 100; //Number of iterations for the Iterative Hard Threshol
 const double lambda = 10e-9; //The constant \lambda which is used in Tikhonov regularization.
                              //If lambda is set to zero then a regular solve is done instead.
 
-const double threshold_weight = 0.15 //This number describes the threshold for the IHT algorithm.
+const double threshold_weight = 0.15; //This number describes the threshold for the IHT algorithm.
                                      //In particular, this weight is multiplied by the average
                                      //of the maximums for each grouping.
 
