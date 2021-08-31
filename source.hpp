@@ -5,11 +5,11 @@
 
 class Source{
 public:
-    Source(double theta_n, double phi_n, double amplitude_n){
-        theta = theta_n;
-        phi = phi_n;
-        amplitude = amplitude_n;
-    }
+    Source(double theta_n, double phi_n, double amplitude_n)
+        : theta(theta_n), phi(phi_n), amplitude(amplitude_n) {}
+
+    Source(std::vector<double> vec) 
+        : theta(vec[0]), phi(vec[1]), amplitude(vec[2]) {}
     
     double Theta() const {
         return theta;
@@ -29,6 +29,10 @@ public:
     
     void set_Phi(double P_n){
         phi = P_n;
+    }
+    
+    void set_Amp(double A_n){
+        amplitude = A_n;
     }
     
 private:
