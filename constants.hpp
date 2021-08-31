@@ -18,7 +18,9 @@ const double dL = 1.0 / (double)len; //As the medium is discretized, dL represen
 
 //detectors
 
-const int detect_div_pi = 20; //
+const int detect_div_pi = 20; //To have an sphere of equally distributed detectors, this constant defines how many
+                              //detectors are equally distributed from 0 to pi radians for the azimuthal and polar angle
+                              //and distributes all the sources evenly based on that.
 
 //IHT
 
@@ -28,7 +30,7 @@ const double lambda = 10e-9; //The constant \lambda which is used in Tikhonov re
                              //If lambda is set to zero then a regular solve is done instead.
 
 const double threshold_weight = 0.15; //This number describes the threshold for the IHT algorithm.
-                                     //In particular, this weight is multiplied by the average
-                                     //of the maximums for each grouping.
+                                      //In particular, this weight is multiplied by the average
+                                      //of the maximums for each grouping of test sources.
 
 #endif /* constants_hpp */
