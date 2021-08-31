@@ -254,7 +254,7 @@ public:
             max_indicies.push_back(max_index);
         }
         
-        double threshold = 0.15 * (sum / (double)max_indicies.size());
+        double threshold = threshold_weight * (sum / (double)max_indicies.size());
         for (int k = 0; k < max_indicies.size(); k++){
             if (real(x(max_indicies[k])) > threshold){
                new_test_sources.emplace_back(test_sources[max_indicies[k]].Theta(), test_sources[max_indicies[k]].Phi(), 1.0);
