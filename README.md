@@ -21,9 +21,9 @@ Note that the input file must be in this format.  That is, each line of the inpu
 | Flag | Description |
 | --- | --- |
 | `-f`,`--file` | This flag is required and the input file with the test sources is placed after it. |
-| `-d`,`--detectors` | The code places a sphere of detectors around our medium, a string of the form `x,y,z,radius` is placed after this flag to specify the parameters of this sphere.  This flag is required.|
+| `-d`,`--detectors` | The code places a sphere of detectors around our medium, a string of the form `x,y,z,radius` is required after this flag to specify the parameters of this sphere.  This flag is required.|
 | `-u`,`--uniform_lattice` | This flag specifies that the medium has a uniform scattering coefficient `eta` (defined in `constants.hpp`) throughout.  Strictly one of the flags `-u` or `-s` is required.|
-| `-s`,`--spherical_lattice` | This flag specifies that the medium has a spherical region in which the scattering coefficient of `eta` throughout it and the rest of the lattice has a scattering coefficient of `0`.  Strictly one of the flags `-u` or `-s` is required.|
+| `-s`,`--spherical_lattice` | This flag specifies that the medium has a spherical region in which the scattering coefficient of `eta` throughout it and the rest of the lattice has a scattering coefficient of `0`.  A string of the form `x,y,z,radius` is required after this flag.  Strictly one of the flags `-u` or `-s` is required.|
 | `-a`,`--analysis` | This flag results in a directory named `num_test_sources` being made and inside of it are files named `num_test_sources_i.txt` (where `i` corresponds to the simulation number starting from `0`) which hold two columns of data pertaining to the step in the IHT algorithm and the number of test sources in that step.  In addition, directories named `IHT_output_i` (where `i` corresponds to the simulation number starting from `0`) are mode and in each directory are a series of files which output three columns of data pertaining to the `theta  phi  amplitude` of each element in the set of test sources for each step of the IHT algorithm. |
 ### Command Line Output
 For each simulation a line is printed of the following form 
