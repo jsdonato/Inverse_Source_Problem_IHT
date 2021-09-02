@@ -5,7 +5,7 @@
 
 const double freq = 1.0; //Frequency of incoming sources.
 
-const int num_div = 10; //The test sources in theta x phi are placed in a equally spaced num_div x num_div grid. 
+const int num_div = 10; //The test sources in theta x phi are placed in a equally spaced (num_div+1) x (num_div+1) grid. 
 
 //lattice
 
